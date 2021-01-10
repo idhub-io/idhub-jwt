@@ -1,0 +1,36 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Publish binaries
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build
+        uses: qcastel/github-actions-maven-cmd@master
+        env:
+          DOCKER_REGISTRY_ID: registry.hub.docker.com
+          DOCKER_REGISTRY_USERNAME: qcastel
+          DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+        with:
+          maven-args: "clean install -DskipTests jib:build -s .github/settings.xml"
+      - name: Deploy
+        uses: qcastel/github-actions-trigger-deploy@master
+        with:
+          git-release-bot-name: "bot-idhub"
+          git-release-bot-email: "bot@idhub.io"
+
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FOR_DEPLOY }}
+
+          repository: git@github.com:idhub-io/idhub-deployment.git
+
+          images-names: "idhub-api;idhub-gateway"
+
+
+

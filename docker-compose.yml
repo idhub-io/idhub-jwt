@@ -1,0 +1,14 @@
+version: '3'
+services:
+  postgres_idhub_keys:
+    container_name: postgres_idhub_keys
+    image: postgres:9.6.9
+    ports:
+      - "8434:5432"
+    hostname: postgres_idhub_keys
+    environment:
+      - POSTGRES_PASSWORD=local
+      - POSTGRES_USER=local
+      - POSTGRES_DB=idhub-keys-db
+    volumes:
+      - ./db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql

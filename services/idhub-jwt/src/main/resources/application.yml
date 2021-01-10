@@ -1,0 +1,28 @@
+server:
+  max-http-header-size: 48000
+
+spring:
+  application:
+    name: "idhub-jwt"
+  r2dbc:
+    pool:
+      initial-size: 10
+      max-size: 10
+      max-idle-time: 30
+
+management:
+  endpoints:
+    metrics:
+      enabled: true
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: ALWAYS
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
