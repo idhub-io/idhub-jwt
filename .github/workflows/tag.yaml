@@ -30,7 +30,7 @@ jobs:
 
           repository: git@github.com:idhub-io/idhub-deployment.git
 
-          images-names: "idhub-api;idhub-gateway"
+          images-names: "idhub-jwt"
 
 
 

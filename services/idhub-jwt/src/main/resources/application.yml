@@ -26,3 +26,11 @@ management:
     export:
       prometheus:
         enabled: true
+
+idhub:
+  jwt:
+    default:
+      jws-algorithm: RS256
+      encryption-algorithm: RSA-OAEP-256
+      encryption-method: A128CBC-HS256
+      key-valid-period:  7200000
