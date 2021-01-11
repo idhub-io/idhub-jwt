@@ -134,7 +134,7 @@
                         <image>qcastel/docker-alpine-with-bash:0.3</image>
                     </from>
                     <to>
-                        <image>registry.hub.docker.com/qcastel/idhub-api</image>
+                        <image>registry.hub.docker.com/qcastel/idhub-jwt</image>
                         <tags>
                             <tag>${project.parent.version}</tag>
                             <tag>latest</tag>

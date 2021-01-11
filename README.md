@@ -1,3 +1,3 @@
-# idhub-api
+# idhub-jwt
 
-Contains the backend API 
+Contains the backend JWT 
