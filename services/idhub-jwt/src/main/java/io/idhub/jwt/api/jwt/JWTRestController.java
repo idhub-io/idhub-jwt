@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jwt.*;
+import io.idhub.jwt.api.app.PublicApplicationKeysRestController;
 import io.idhub.jwt.exceptions.IDHubRestErrorException;
 import io.idhub.jwt.exceptions.IDHubRestRunTimeErrorException;
 import io.idhub.jwt.model.JWTDecoded;
@@ -17,6 +18,7 @@ import io.idhub.jwt.services.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -29,6 +31,8 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.idhub.jwt.error.JWTErrorType.IDHUB_TOKEN_FORMAT_INVALID;
 import static io.idhub.jwt.error.JWTErrorType.IDHUB_TOKEN_SIGNATURE_INVALID;
@@ -42,6 +46,12 @@ public class JWTRestController {
     private final KeyRepository keyRepository;
     private final ApplicationConfigRepository applicationConfigRepository;
     private final JWTService jwtService;
+    private final PublicApplicationKeysRestController publicApplicationKeysRestController;
+
+    private final Pattern pattern = Pattern.compile("\\/public\\/app\\/(.*)\\/jwks_uri");
+
+    @Value("${idhub.hostname}")
+    private String hostname;
 
     @PostMapping(path = "/create")
     public Mono<String> createJwt(
@@ -120,7 +130,7 @@ public class JWTRestController {
             SignedJWT jwsObject = (SignedJWT)jwt;
 
 
-            JWTDecoded.JWTDecodedBuilder jwtDecoded = null;
+            final JWTDecoded.JWTDecodedBuilder jwtDecoded;
             try {
                 jwtDecoded = JWTDecoded.builder()
                         .format(JWTFormat.SIGNED)
@@ -152,18 +162,32 @@ public class JWTRestController {
                     jwtDecoded.isValid(false);
                 }
             } else if (jwkUri.isPresent()) {
-                JWKSet jwkSet;
-                try {
-                    jwkSet = JWKSet.load(jwkUri.get());
-                } catch (IOException e) {
-                    throw new IDHubRestRunTimeErrorException(IDHUB_TOKEN_FORMAT_INVALID, e);
+                Mono<JWKSet> jwkSet = null;
+                if (hostname.equals(jwkUri.get().getHost())) {
+                    Matcher matcher = pattern.matcher(jwkUri.get().getPath());
+                    if (matcher.find()) {
+                        String otherApplicationId = matcher.group(1);
+                        jwkSet = publicApplicationKeysRestController.getKeys(otherApplicationId);
+                    }
                 }
-                try {
-                    jwtService.verifyJWS(jwtSerialised, expectedIssuer, expectedAudience, jwkSet);
-                    jwtDecoded.isValid(true);
-                } catch (IDHubRestErrorException e) {
-                    jwtDecoded.isValid(false);
+
+                if (jwkSet == null){
+                    try {
+                        jwkSet = Mono.just(JWKSet.load(jwkUri.get()));
+                    } catch (IOException e) {
+                        throw new IDHubRestRunTimeErrorException(IDHUB_TOKEN_FORMAT_INVALID, e);
+                    }
                 }
+                return jwkSet.flatMap(j -> {
+                    try {
+                        jwtService.verifyJWS(jwtSerialised, expectedIssuer, expectedAudience, j);
+                        jwtDecoded.isValid(true);
+                    } catch (IDHubRestErrorException e) {
+                        jwtDecoded.isValid(false);
+                    }
+                    return Mono.just(jwtDecoded.build());
+                });
+
             }
             return Mono.just(jwtDecoded.build());
         } else if (jwt instanceof EncryptedJWT) {

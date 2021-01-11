@@ -28,6 +28,7 @@ management:
         enabled: true
 
 idhub:
+  hostname: api.idhub.io
   jwt:
     default:
       jws-algorithm: RS256

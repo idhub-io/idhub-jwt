@@ -11,3 +11,6 @@ spring:
     database: idhub-keys-db
     username: local
     password: local
+
+idhub:
+  hostname: api.local.idhub.io
