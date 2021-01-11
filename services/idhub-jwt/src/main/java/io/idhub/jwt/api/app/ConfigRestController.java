@@ -31,7 +31,28 @@ public class ConfigRestController {
             @RequestBody ApplicationConfig body
     ) {
         String applicationId = principal.getName();
-        body.setApplicationId(applicationId);
-        return applicationConfigRepository.save(body);
+        return applicationConfigRepository.findByApplicationId(applicationId)
+                .flatMap(c -> {
+                    if (body.getDefaultSigningAlgorithm() != null) {
+                        c.setDefaultSigningAlgorithm(body.getDefaultSigningAlgorithm());
+                    }
+                    if (body.getDefaultEncryptionAlgorithm() != null) {
+                        c.setDefaultEncryptionAlgorithm(body.getDefaultEncryptionAlgorithm());
+                    }
+                    if (body.getDefaultEncryptionMethod() != null) {
+                        c.setDefaultEncryptionMethod(body.getDefaultEncryptionMethod());
+                    }
+                    if (body.getKeyValidPeriod() != null) {
+                        c.setKeyValidPeriod(body.getKeyValidPeriod());
+                    }
+                    if (body.getCurrentSignKid() != null) {
+                        c.setCurrentSignKid(body.getCurrentSignKid());
+                    }
+                    if (body.getCurrentEncKid() != null) {
+                        c.setCurrentEncKid(body.getCurrentEncKid());
+                    }
+
+                    return applicationConfigRepository.save(c);
+                });
     }
 }
