@@ -67,7 +67,8 @@ public class JWTRestController {
                         case SIGNED:
                         default:
                             return keyRepository.findByIdAndApplicationId(c.getCurrentSignKid(), applicationId)
-                                    .flatMap(signingKey -> Mono.just(jwtService.signClaims(jwtClaimsSet, signingKey.getJwk(), c.getDefaultSigningAlgorithm()).serialize()));
+                                    .flatMap(signingKey ->
+                                            Mono.just(jwtService.signClaims(jwtClaimsSet, signingKey.getJwk(), c.getDefaultSigningAlgorithm()).serialize()));
                     }
 
                 });

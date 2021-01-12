@@ -13,8 +13,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.security.Principal;
 import java.util.UUID;
 
@@ -32,8 +35,9 @@ public class SingleKeyRestController {
     private final JWKService JWKService;
 
     @PostMapping(path = "/")
-    public Mono<Key> createKey(
+    public Mono<ServerResponse> createKey(
             Principal principal,
+            ServerWebExchange exchange,
             @RequestParam(value = "use", defaultValue = "SIGNATURE") KeyUse keyUse,
             @RequestBody(required = false) final JWK jwk
     ) {
@@ -54,12 +58,13 @@ public class SingleKeyRestController {
                             .validityWindowStop(DateTime.now().plusYears(WINDOWS_NB_YEARS))
                             .jwk(jwkForKey)
                             .build();
-                    return keyRepository.save(key);
+                    return keyRepository.save(key)
+                            .flatMap(k -> ServerResponse.created(URI.create("/keys/" + k.getId())).bodyValue(k));
                 });
     }
 
     @DeleteMapping(path = "/{key-id}")
-    public Mono<Void> deleteKey(
+    public Mono<ServerResponse> deleteKey(
             Principal principal,
             @PathVariable(value = "key-id") UUID keyId
     ) {
@@ -69,7 +74,9 @@ public class SingleKeyRestController {
                     if (c.getCurrentSignKid().equals(keyId) || c.getCurrentEncKid().equals(keyId)) {
                         throw new IDHubRestRunTimeErrorException(IDHUB_KEY_USED_AS_DEFAULT, keyId);
                     }
-                    return keyRepository.deleteByIdAndApplicationId(keyId, applicationId);
+                    return keyRepository.deleteByIdAndApplicationId(keyId, applicationId)
+                            .flatMap(k -> ServerResponse.noContent().build());
+
                 })
                 ;
     }
