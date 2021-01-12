@@ -12,12 +12,11 @@ import io.idhub.jwt.services.JWKService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
 import java.security.Principal;
 import java.util.UUID;
 
@@ -35,12 +34,13 @@ public class SingleKeyRestController {
     private final JWKService JWKService;
 
     @PostMapping(path = "/")
-    public Mono<ServerResponse> createKey(
+    public Mono<Key> createKey(
             Principal principal,
             ServerWebExchange exchange,
             @RequestParam(value = "use", defaultValue = "SIGNATURE") KeyUse keyUse,
             @RequestBody(required = false) final JWK jwk
     ) {
+        exchange.getResponse().setStatusCode(HttpStatus.CREATED);
         String applicationId = principal.getName();
         return applicationConfigRepository.findByApplicationId(applicationId)
                 .flatMap(c -> {
@@ -58,24 +58,25 @@ public class SingleKeyRestController {
                             .validityWindowStop(DateTime.now().plusYears(WINDOWS_NB_YEARS))
                             .jwk(jwkForKey)
                             .build();
-                    return keyRepository.save(key)
-                            .flatMap(k -> ServerResponse.created(URI.create("/keys/" + k.getId())).bodyValue(k));
+                    return keyRepository.save(key);
                 });
     }
 
     @DeleteMapping(path = "/{key-id}")
-    public Mono<ServerResponse> deleteKey(
+    public Mono<Void> deleteKey(
             Principal principal,
+            ServerWebExchange exchange,
             @PathVariable(value = "key-id") UUID keyId
     ) {
         String applicationId = principal.getName();
+        exchange.getResponse().setStatusCode(HttpStatus.NO_CONTENT);
+
         return applicationConfigRepository.findByApplicationId(applicationId)
                 .flatMap(c -> {
                     if (c.getCurrentSignKid().equals(keyId) || c.getCurrentEncKid().equals(keyId)) {
                         throw new IDHubRestRunTimeErrorException(IDHUB_KEY_USED_AS_DEFAULT, keyId);
                     }
-                    return keyRepository.deleteByIdAndApplicationId(keyId, applicationId)
-                            .flatMap(k -> ServerResponse.noContent().build());
+                    return keyRepository.deleteByIdAndApplicationId(keyId, applicationId);
 
                 })
                 ;
