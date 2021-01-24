@@ -64,12 +64,19 @@ You can use the same postman than for our online service, except that you need t
 
 The microservice is design to delegate the API protection to a gateway and instead trust a header called `x-idhub-principal-id`.
 You can pass in this header the identifier of the caller.
-In the case you want to share the same set of keys for all your microservices that will consume ID Hub JWT, you can then hardcode this header to `x-idhub-principal-id=idhub`. All the services that will call ID Hub JWT will sign JWT with the same keys for example.
+In the case you want to share the same set of keys for all your microservices that will consume ID Hub JWT, you can then hardcode this header to `x-idhub-principal-id=idhub`. 
+All the services that will call ID Hub JWT will sign JWT with the same keys for example.
 
 
 In our online service, what we did is making our OAuth2 gateway extract the subject from the access token and pass this value to this header.
 This way we could offer you to use the service without having to share keys with everyone else.
 
+##### Use the same postman collection
+
+Select the local environment. This should work as is.
+
+Note: In the pre-script of the collection, we setup a rules that if the environment variable `idhub-principal-id` is setup then it 
+will be automatically injected in the header `x-idhub-principal-id`.
 
 #### Keys storage
 
