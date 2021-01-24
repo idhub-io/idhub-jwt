@@ -12,3 +12,19 @@ services:
       - POSTGRES_DB=idhub-keys-db
     volumes:
       - ./db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  idhub_jwt:
+    depends_on:
+      - postgres_idhub_keys
+    container_name: idhub_jwt
+    image: registry.hub.docker.com/qcastel/idhub-jwt:latest
+    ports:
+      - "8482:8080"
+    environment:
+      - SPRING_PROFILES_INCLUDE=console-logging
+      - SPRING_R2DBC_HOST=postgres_idhub_keys
+      - SPRING_R2DBC_PORT=5432
+      - SPRING_R2DBC_DATABASE=idhub-keys-db
+      - SPRING_R2DBC_USERNAME=local
+      - SPRING_R2DBC_PASSWORD=local
+      - IDHUB_HOSTNAME=localhost

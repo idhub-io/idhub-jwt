@@ -10,6 +10,7 @@ import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.ConnectionFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @Configuration
 @EnableR2dbcRepositories
+@Slf4j
 public class DatabaseConfiguration extends AbstractR2dbcConfiguration {
 
     @Value("${spring.r2dbc.host}")
@@ -50,6 +52,7 @@ public class DatabaseConfiguration extends AbstractR2dbcConfiguration {
     @Override
     @Bean
     public ConnectionFactory connectionFactory() {
+        log.debug("Try to connect to {}:{} on database {} with username {}", host, port, database, username);
         ConnectionFactory connectionFactory = new PostgresqlConnectionFactory(
                 PostgresqlConnectionConfiguration.builder()
                                                  .host(host)
